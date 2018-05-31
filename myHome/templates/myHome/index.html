@@ -1,0 +1,114 @@
+<!DOCTYPE HTML>
+{% load tag %}
+{% load db_tag %}
+<html>
+<head style="width : 100%;font-family:sans-serif;">
+    <meta charset="utf-8">
+    <title>시계열 분석을 통한 2018년도 가격예측</title>
+    <style>
+        div{
+            text-align: center;
+        }
+    </style>
+</head>
+<body style="width : 100%;font-family:  sans-serif;">
+<header>
+    <div>
+            <span style = " font-size:2em;">
+                시계열 분석을 통한 2018년도 어종별 가격예측
+            </span>
+
+
+        <form action="content.html" method="get" onsubmit="return btn_click();">
+            <select name="species" id="species">
+              <option selected="selected" disabled >어종</option>
+              {% df_fish as fishes %}
+              {% fish_kind request.get_full_path as fish_select %}
+                  {% for fish in fishes %}
+                    <option value="{{fish.0}}"{% if fish.0 == fish_select %}selected="selected" id="fish"{% endif %}>{{fish.2}}</option>
+                  {% endfor %}
+
+            </select>
+            <select name="year">
+              <option selected="selected">2018</option>
+            </select>
+            <select name="month" id="month_select" onchange="changeMonth()">
+              {% month request.get_full_path as month %}
+              <option selected="selected" disabled >월</option>
+              <option value="6" {% if month == 6%}selected="selected"{% endif %}>6</option>
+              <option value="7" {% if month == 7%}selected="selected"{% endif %}>7</option>
+              <option value="8" {% if month == 8%}selected="selected"{% endif %}>8</option>
+              <option value="9" {% if month == 9%}selected="selected"{% endif %}>9</option>
+              <option value="10" {% if month == 10%}selected="selected"{% endif %}>10</option>
+              <option value="11" {% if month == 11%}selected="selected"{% endif %}>11</option>
+              <option value="12" {% if month == 12%}selected="selected"{% endif %}>12</option>
+            </select>
+
+            <select name="day" id="day_select" {% if not month  %}style="display:none;"{% endif %}>
+                  {% day request.get_full_path as end_day %}
+                  {% select_day request.get_full_path as select_day %}
+                  <option selected="selected" disabled>일</option>
+                  {% for i in end_day|range_fuc%}
+                  <option value="{{i}}" {% if select_day == i%}selected="selected"{% endif %}>{{i}}</option>
+                  {% endfor %}
+            </select>
+            <input type="submit" value="가격 예측">
+        </form>
+    </div>
+</header>
+<section>
+    {% block content %}
+
+    {% endblock %}
+</section>
+<script>
+    function btn_click(){
+        var species = document.getElementById("species").value
+        var month_select = document.getElementById("month_select").value
+        var day_select = document.getElementById("day_select").value
+
+        if(species=="어종"){
+            alert("어종을 선택해주세요")
+            return false;
+        }
+        else if(month_select=="월"){
+            alert("월을 선택해주세요")
+            return false;
+        }
+        else if(day_select=="일"){
+            alert("일을 선택해주세요")
+            return false;
+        }
+        return true;
+    }
+</script>
+<script type="text/javascript">
+    function changeMonth(){
+        var month_select = document.getElementById("month_select");
+        var selectValue = month_select.options[month_select.selectedIndex].value;
+        var x = document.getElementById("day_select");
+        var option = new Option();
+        x.options.length = 0
+        option.text = "일";
+        option.selected = "selected"
+        option.disabled = "disabled"
+        x.add(option)
+        {% all_month as all_month %}
+        {% for months in all_month %}
+            if(selectValue=="{{months}}"){
+                {% day2 months as end_day %}
+
+                  {% for i in end_day|range_fuc%}
+                    var option = new Option();
+                    option.text = "{{i}}";
+                    option.value = "{{i}}";
+                    x.add(option)
+                  {% endfor %}
+            }
+        {% endfor %}
+
+        x.style = "display:inline;"
+    }
+</script>
+ </body>
+</html>

@@ -1,0 +1,147 @@
+{% extends 'myHome/index.html' %}
+{% load tag %}
+{% load db_tag %}
+{% load staticfiles %}
+{% block content %}
+{% df_place as place %}
+<style>
+table {
+    width:1000px;
+    /*border: 1px solid #444444;*/
+    border: 1px solid DarkOrange;
+      border-radius: 13px;
+
+
+    text-align: center;
+    margin:auto;
+  }
+  th{
+    /*border: 1px solid #444444;*/
+    border-bottom: 1px solid orange;
+  }
+
+
+</style>
+<script>
+var place = new Array();
+var cnt = 0;
+var fish = "";
+</script>
+{% df_fish as fishes %}
+{% fish_kind request.get_full_path as fish_select %}
+      {% for fish in fishes %}
+        {% if fish.0 == fish_select %}
+            <script>
+                fish = "{{fish.2}}"
+            </script>
+            {% for row in place %}
+                {% fish_compare fish.2 row.1 as compare%}
+                {% if compare is 1 %}
+                    <!--<p>어판장 : {{row.2}}</p> -->
+                    <script>
+                        place[cnt] = "{{row.2}}"
+                        cnt+=1
+                    </script>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+      {% endfor %}
+
+{% month request.get_full_path as month %}
+{% select_day request.get_full_path as select_day %}
+
+</br>
+
+<table>
+    <thead>
+        <tr style="font-weight:bold;">
+            <th>18년도 시계열 분석 그래프</th>
+            <th>18년도 예상 가격</th>
+        </tr>
+        <tr>
+            <th><img src="{%static 'img/낙지.png'%}" title="낙지" /></th>
+            <th id ="predict_price" style = "font-size:1.5em;"></th>
+        </tr>
+        <tr style="font-weight:bold;">
+            <th id="산지조합위치"><p>이곳에는 어종별 예측가를 보여줍니다.</p></th>
+            <th id="산지조합명"></th>
+        </tr>
+        <tr>
+            <td><div id="map" style="width:610px;height:400px;"></div></td>
+            <td id="place"></td>
+        </tr>
+    </thead>
+</table>
+
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=c16616488c5b21350ade12a68be8670f&libraries=services"></script>
+<script>
+// 마커를 클릭하면 장소명을 표출할 인포윈도우 입니다
+var infowindow = new daum.maps.InfoWindow({zIndex:1});
+
+var mapContainer = document.getElementById('map'), // 지도를 표시할 div
+    mapOption = {
+        center: new daum.maps.LatLng(37.566826, 126.9786567), // 지도의 중심좌표
+        level: 3 // 지도의 확대 레벨
+    };
+
+// 지도를 생성합니다
+var map = new daum.maps.Map(mapContainer, mapOption);
+
+// 장소 검색 객체를 생성합니다
+var ps = new daum.maps.services.Places();
+
+
+
+// 키워드 검색 완료 시 호출되는 콜백함수 입니다
+function placesSearchCB (data, status, pagination) {
+    if (status === daum.maps.services.Status.OK) {
+
+        // 검색된 장소 위치를 기준으로 지도 범위를 재설정하기위해
+        // LatLngBounds 객체에 좌표를 추가합니다
+        var bounds = new daum.maps.LatLngBounds();
+
+        for (var i=0; i<data.length; i++) {
+            displayMarker(data[i]);
+            bounds.extend(new daum.maps.LatLng(data[i].y, data[i].x));
+        }
+
+        // 검색된 장소 위치를 기준으로 지도 범위를 재설정합니다
+        map.setBounds(bounds);
+    }
+}
+
+// 지도에 마커를 표시하는 함수입니다
+function displayMarker(place) {
+
+    // 마커를 생성하고 지도에 표시합니다
+    var marker = new daum.maps.Marker({
+        map: map,
+        position: new daum.maps.LatLng(place.y, place.x)
+    });
+
+    // 마커에 클릭이벤트를 등록합니다
+    daum.maps.event.addListener(marker, 'click', function() {
+        // 마커를 클릭하면 장소명이 인포윈도우에 표출됩니다
+        infowindow.setContent('<div style="padding:5px;font-size:12px;">' + place.place_name + '</div>');
+        infowindow.open(map, marker);
+    });
+}
+</script>
+
+<script>
+    var p = document.getElementById("place");
+    document.getElementById("산지조합위치").innerHTML = fish+" 산지조합위치"
+    document.getElementById("산지조합명").innerHTML = fish+" 산지조합명"
+    document.getElementById("predict_price").innerHTML = "18년"+"{{month}}월"+"{{select_day}}일 낙지 예상가는 약 18,000원 입니다."
+    for(i=0; i<place.length; i++){
+        if(i==(place.length-1)){
+            p.innerHTML += (place[i]);
+            break;
+        }
+        p.innerHTML += (place[i]+ ', ');
+        // 키워드로 장소를 검색합니다
+        ps.keywordSearch(place[i], placesSearchCB);
+    }
+
+</script>
+{% endblock %}
